@@ -1,0 +1,53 @@
+import requests
+import json
+import pymysql
+count=1
+
+db=pymysql.connect(host="localhost",user="root",password="13887302395",database="pachong", charset='utf8')
+cur = db.cursor()
+cur.execute("DROP TABLE IF EXISTS EMPLOYEE")
+# 创建数据表SQL语句
+sql = """CREATE TABLE bilili (
+  `序号` int(11) NOT NULL AUTO_INCREMENT COMMENT '序号',
+  `代码` varchar(64) DEFAULT NULL COMMENT '代码',
+  `名称` varchar(64) DEFAULT NULL COMMENT '名称',
+  `最新价` varchar(64) DEFAULT NULL COMMENT '最新价',
+  `涨跌幅` varchar(64) DEFAULT NULL COMMENT '涨跌幅',
+  `涨跌额` varchar(64) DEFAULT NULL COMMENT '涨跌额',
+  `成交量` varchar(64) DEFAULT NULL COMMENT '成交量(手)',
+  `成交额` varchar(64) DEFAULT NULL COMMENT '成交额',
+  `振幅` varchar(64) DEFAULT NULL COMMENT '振幅',
+  `最高` varchar(64) DEFAULT NULL COMMENT '最高',
+  `最低` varchar(64) DEFAULT NULL COMMENT '最低',
+  `今开` varchar(64) DEFAULT NULL COMMENT '今开',
+  `昨收` varchar(64) DEFAULT NULL COMMENT '昨收',
+  `量比` varchar(64) DEFAULT NULL COMMENT '量比',
+  `换手率` varchar(64) DEFAULT NULL COMMENT '换手率',
+  `市盈率` varchar(64) DEFAULT NULL COMMENT '市盈率(动态)',
+  `市净率` varchar(64) DEFAULT NULL COMMENT '市净率',
+  PRIMARY KEY (`序号`) USING BTREE
+)"""
+cur.execute(sql)
+
+
+for x in range(194):
+    url = 'http://91.push2.eastmoney.com/api/qt/clist/get?pn={}&pz=20&po=1&np=1&ut=bd1d9ddb04089700cf9c27f6f7426281&fltt=2' \
+          '&invt=2&fid=f3&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23&fields=f12,f14,f2,f3,f4,f5,f6,f7,f15,f16,f17,f18,f10,' \
+          'f8,f9,f23&_=1577170006729'.format(x+1)
+    res = requests.get(url)
+    jl_res = json.loads(res.text)
+    json_r = jl_res['data']['diff']
+    for x in range(len(json_r)):
+        #print(json_r[x])
+        print('爬取出' + str(count) + '条数据')
+        count += 1
+        l = '''INSERT INTO biao (代码,名称,最新价,涨跌幅,涨跌额,成交量,成交额,振幅,最高,最低,今开,昨收,量比,换手率,市盈率,市净率
+                )VALUES	(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'''
+        value = (json_r[x]['f12'], json_r[x]['f14'], json_r[x]['f2'], json_r[x]['f3'], json_r[x]['f4'], json_r[x]['f5'],
+                 json_r[x]['f6'], json_r[x]['f7'], json_r[x]['f15'], json_r[x]['f16'], json_r[x]['f17'],
+                 json_r[x]['f18'], json_r[x]['f10'], json_r[x]['f8'], json_r[x]['f9'], json_r[x]['f23'])
+        cur.execute(l, value)
+        db.commit()
+db.close()
+
+
