@@ -1,0 +1,46 @@
+import requests
+import json
+import pymysql
+#连接数据库
+conn = pymysql.connect(
+    host='127.0.0.1',
+    port=3306,
+    user='root',
+    password='13887302395',
+    database='xpy_a',
+    charset='utf8'
+)
+# 获取一个光标
+cursor = conn.cursor()
+#建立表
+sql = """
+CREATE TABLE ncov_new0219(
+province varchar(20),
+city varchar(10) NULL,
+count_cnov varchar(10) NOT NULL,
+susnum varchar(10) NOT NULL,
+curenum varchar(10) NOT NULL,
+deadthnum varchar(10) NOT NULL
+)ENGINE=innodb DEFAULT CHARSET=utf8;  
+"""
+# 执行SQL语句
+cursor.execute(sql)
+# 关闭光标对象
+
+url='https://gwpre.sina.cn/interface/fymap2020_data.json?1581841171119&&callback=__dataAPIData'
+headers = {'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36 OPR/66.0.3515.72'}
+res = requests.get(url).text
+a=res[14:-2]
+answer=json.loads(a)
+first=answer['data']['list']
+for re in first:
+    if re['city']==[]:
+        sql = "INSERT INTO ncov_new0219(province,count_cnov,susnum,curenum,deadthnum) VALUES(%s,%s,%s,%s,%s)"
+        cursor.execute(sql, (re['name'],re['value'],re['susNum'],re['cureNum'],re['deathNum']))
+        conn.commit()
+    else:
+        for re_a in re['city']:
+            sq = "INSERT INTO ncov_new0219(province,city,count_cnov,susnum,curenum,deadthnum) VALUES(%s,%s,%s,%s,%s,%s)"
+            cursor.execute(sq, (re['name'], re_a['name'], re_a['conNum'], re_a['susNum'], re_a['cureNum'],re_a['deathNum']))
+            conn.commit()
+conn.close()
